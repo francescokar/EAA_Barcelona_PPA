@@ -1,7 +1,6 @@
 ## Import dataset
 
 library(GISTools)
-setwd("D:/R-Code_Projects/EAA_Barcelona")
 FB018B<-readShapePoly("FB018B_Surface")
 RR_FB018B<-readShapePoints("RR_FB018B")
 
