@@ -30,7 +30,7 @@ tiff("RR_FB018B.tif",width=6000,height=4800,units="px",res=800)
 par(mar=c(0,0,4,0))
 plot(FB018B,lwd=1.8,col="#CCCCCC",main="FB018B: intra-site debris distribution
      (log-size plotted)",cex.main=1.2)
-plot(RR_FB018B,cex=log(RR_FB018B$Dimension),pch=c(1,2,0)[RR_FB018B$Preservati],
+plot(RR_FB018B,cex=log(RR_FB018B$Dimension)+1,pch=c(1,2,0)[RR_FB018B$Preservati],
      lwd=1,col="red",add=T)
 legend(-300,530,legend=c("Complete","Fragment","Portion"),pch=c(1,2,0),cex=1.2,col="red")
 map.scale(200,70,len=200,units="meters",ndivs=2,subdiv=1)
@@ -212,7 +212,7 @@ par(mar=c(0,2,5,0))
 plot(FB018B,lwd=1.9,col="#CCCCCC",
      main="FB018: spatially independent RR
      (log-size plotted)",cex.main=1.5)
-plot(RR_FB018B,cex=log(RR_FB018B$Dimension),pch=c(NA,1,2)[RRlm_NA],lwd=1,add=T)
+plot(RR_FB018B,cex=log(RR_FB018B$Dimension)+1,pch=c(NA,1,2)[RRlm_NA],lwd=1,add=T)
 legend(-300,530,legend=c("Complete","Fragment"),pch=c(1,2),cex=1.2,col="black")
 map.scale(200,70,len=200,units="meters",ndivs=2,subdiv=1)
 dev.off()
