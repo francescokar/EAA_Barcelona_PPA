@@ -30,9 +30,9 @@ tiff("RR_FB018B.tif",width=6000,height=4800,units="px",res=800)
 par(mar=c(0,0,4,0))
 plot(FB018B,lwd=1.8,col="#CCCCCC",main="FB018B: intra-site debris distribution
      (log-size plotted)",cex.main=1.2)
-plot(RR_FB018B,cex=log(RR_FB018B$Dimension),pch=c(1,2)[RR_FB018B$Preservati],
+plot(RR_FB018B,cex=log(RR_FB018B$Dimension),pch=c(1,2,0)[RR_FB018B$Preservati],
      lwd=1,col="red",add=T)
-legend(-300,530,legend=c("Complete","Fragment"),pch=c(1,2),cex=1.2,col="red")
+legend(-300,530,legend=c("Complete","Fragment","Portion"),pch=c(1,2,0),cex=1.2,col="red")
 map.scale(200,70,len=200,units="meters",ndivs=2,subdiv=1)
 dev.off()
 
@@ -128,7 +128,6 @@ dev.off()
 
 ### SPATIAL DEPENDENCY
 
-library(pgirmess)
 library(spdep)
 
 # Moran's I correlogram (distance classes and lags)
@@ -198,39 +197,65 @@ legend(-300,500,legend=c("I < -1","I > -1 < 0","I > 0 < 1","I > 1"),pt.cex=1.2,
 map.scale(200,70,len=200,units="meters",ndivs=2,subdiv=1)
 dev.off()
 
+## SPATIALLY INDEPENDENT RR
+
+RRlm_Is<-(RR_FB018B_lMoran[,1]>0)+0
+
+RR_pres1<-(RR_FB018B$Preservati=="Complete")+0
+RR_pres2<-(RR_FB018B$Preservati=="Fragment"|RR_FB018B$Preservati=="Portion")+0
+RR_C<-RR_pres1-RRlm_Is; RRlm_Comp<-(RR_C==1)+0
+RR_F<-RR_pres2-RRlm_Is; RRlm_Frag<-(RR_F==1)*2
+RRlm_NA<-(RRlm_Comp+RRlm_Frag)+1
+
+tiff("Non_Autocorr.tif",width=6000,height=4800,units="px",res=800)
+par(mar=c(0,2,5,0))
+plot(FB018B,lwd=1.9,col="#CCCCCC",
+     main="FB018: spatially independent RR
+     (log-size plotted)",cex.main=1.5)
+plot(RR_FB018B,cex=log(RR_FB018B$Dimension),pch=c(NA,1,2)[RRlm_NA],lwd=1,add=T)
+legend(-300,530,legend=c("Complete","Fragment"),pch=c(1,2),cex=1.2,col="black")
+map.scale(200,70,len=200,units="meters",ndivs=2,subdiv=1)
+dev.off()
+
+
 ### LOCAL JOIN COUNT STATISTICS
 
 # Provisional example
 
-RR_FB018B_cat<-as.numeric(RR_FB018B$Preservati)-1
+# Compute distance weight (wij=dij, wii=1/dij)
+RRcoord<-cbind(coordinates(RR_FB018B))
+RRdist<-dist(RRcoord,diag=T)
+RRdist_mat<-as.matrix(RRdist)
+RRweight<-1/RRdist_mat
+diag(RRweight)<-0
 
-for(i in 1:length(RR_FB018B_cat)){
-  xi<-(RR_FB018B_cat[1:i])
-  xj<-RR_FB018B_cat
+for(i in 1:length(RR_pres2)){
+  xi<-(RR_pres2[1:i])
+  xj<-RR_pres2
   w<-(RRweight[,1:i])
   bb<-w*xj
   ww<-w*(1-xj)}
 
 sbb<-colSums(bb)
-BB_RRLICD<-RR_FB018B_cat*sbb
+BB_RRLICD<-RR_pres2*sbb
 sww<-colSums(ww)
-WW_RRLICD<-(1-RR_FB018B_cat)*sww
+WW_RRLICD<-(1-RR_pres2)*sww
 
 summary(BB_RRLICD)
 summary(WW_RRLICD)
 
 # plot the LICD results
-RR_BB<-(BB_RRLICD>=0.5032)*3
-RR_WW<-(WW_RRLICD>=0.3614)*2
-RR_BW<-(BB_RRLICD<0.5032 & WW_RRLICD<0.3614)+0
+RR_BB<-(BB_RRLICD>=0.39)*3
+RR_WW<-(WW_RRLICD>=0.68)*2
+RR_BW<-(BB_RRLICD<0.39 & WW_RRLICD<0.68)+0
 RR_BBWW<-RR_BB+RR_WW+RR_BW
-RRJCS_pch<-c(4,16,1)
 tiff("FB018B_LICD.tif",width=6000,height=4800,units="px",res=800)
 par(mar=c(0,2,5,0))
 plot(FB018B,lwd=1.8,col="#CCCCCC",main="FB018B: Local-JCS",cex.main=1.5)
-plot(RR_FB018B,cex=1.5,pch=RRJCS_pch[RR_BBWW],add=T)
-legend(-300,530,legend=c("Not significant","BB","WW"),pt.cex=1.2,
-       pch=RRJCS_pch)
+plot(RR_FB018B,cex=1.5,pch=c(4,16,1)[RR_BBWW],add=T)
+legend(-300,530,
+       legend=c("Not significant","Complete-Complete","Fragment-Fragment"),
+       pt.cex=1.2,pch=RRJCS_pch)
 map.scale(200,70,len=200,units="meters",ndivs=2,subdiv=1)
 dev.off()
 
@@ -238,8 +263,25 @@ dev.off()
 tiff("FB018B_Preservation.tif",width=6000,height=4800,units="px",res=800)
 par(mar=c(0,2,5,0))
 plot(FB018B,lwd=1.8,col="#CCCCCC",main="FB018B: Preservation",cex.main=1.5)
-plot(RR_FB018B,cex=1.5,pch=c(16,1)[RR_FB018B$Preservati],add=T)
-legend(-300,530,legend=c("Complete","Fragment"),pt.cex=1.2,
-       pch=c(16,1))
+plot(RR_FB018B,cex=1.5,pch=c(16,1,2)[RR_FB018B$Preservati],add=T)
+legend(-300,530,legend=c("Complete","Fragment","Portion"),pt.cex=1.2,
+       pch=c(16,1,2))
+map.scale(200,70,len=200,units="meters",ndivs=2,subdiv=1)
+dev.off()
+
+## SPATIALLY INDEPENDENT: CROSSING WITH MORAN'S I
+
+RRlm_Is2<-(RR_FB018B_lMoran[,1]>0)+1
+LICD_col=c("black","white")
+
+tiff("LICD_Non-Autocorr.tif",width=6000,height=4800,units="px",res=800)
+par(mar=c(0,2,5,0))
+plot(FB018B,lwd=1.8,col="#CCCCCC",
+     main="FB018B: spatially independent RR (LICD)",cex.main=1.5)
+plot(RR_FB018B,cex=1.5,pch=c(16,NA,NA)[RR_BBWW],
+     col=LICD_col[RRlm_Is2],add=T)
+legend(-300,530,
+       legend=c("Moran's I =<0","Moran's I >0"),
+       pt.cex=1.2,pch=c(16,1))
 map.scale(200,70,len=200,units="meters",ndivs=2,subdiv=1)
 dev.off()
